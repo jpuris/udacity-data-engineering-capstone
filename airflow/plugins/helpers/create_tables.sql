@@ -21,7 +21,7 @@ CREATE TABLE public.stage_demo (
     average_household_size  BIGINT,
     median_age              BIGINT,
     total_population        BIGINT,
-    female_population       BIGINT,
+    female_population       BIGINT
 );
 
 CREATE TABLE public.stage_temp (
@@ -57,7 +57,7 @@ CREATE TABLE public.fact_demo (
     average_household_size  BIGINT,
     median_age              BIGINT,
     total_population        BIGINT,
-    female_population       BIGINT,
+    female_population       BIGINT
 );
 
 CREATE TABLE public.fact_temp (
