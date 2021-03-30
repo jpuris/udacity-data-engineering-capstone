@@ -127,3 +127,9 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# Project
+original_data_sets
+
+# Aiflow
+airflow/logs

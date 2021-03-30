@@ -1,0 +1,12 @@
+{
+    "python.envFile": "${workspaceFolder}/.vscode/workspace.env",
+    "python.pythonPath": "venv/bin/python3",
+    "python.linting.pycodestyleEnabled": true,
+    "python.linting.pylintEnabled": true,
+    "python.linting.enabled": true,
+    "python.linting.pylintArgs": [
+        "--disable=C0114",
+        "--disable=W0104"
+    ],
+    "python.analysis.extraPaths": ["airflow/plugins/"]
+}
