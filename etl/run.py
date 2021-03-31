@@ -15,9 +15,15 @@ from lib.sql_queries import LOAD_FACT_DEMO
 from lib.sql_queries import LOAD_FACT_TEMP
 
 
-def get_config(conf_file: str, section: str = None):
-    """
-    TODO
+def get_config(conf_file: str, section: str = None) -> dict:
+    """Reads yaml configuration file and returns dict with its content
+
+    Args:
+        conf_file (str): Config file path
+        section (str, optional): root node in yaml file to read
+
+    Returns:
+        dict: Read configuration
     """
     try:
         with open(conf_file) as file:
@@ -34,18 +40,22 @@ def get_config(conf_file: str, section: str = None):
     return conf[section]
 
 
-def init_db_conn(db_params: dict):
-    """
-    TODO
-    """
+def init_db_conn(db_params: dict) -> pg.connect:
+    """Creates PostgreSQL database connection object
 
+    Args:
+        db_params (dict): Database parameters. Must be compatible with
+        psycopg2 connect params.
+
+    Returns:
+        psycopg2.connect: connect object
+    """
     log.debug('Connecting to database')
     conn = pg.connect(**db_params)
     conn.set_session(autocommit=True)
-    cur = conn.cursor()
     log.debug('Database params: "%s"', db_params)
     log.info('Connected to database')
-    return conn, cur
+    return conn
 
 
 def setup_logging(log_level: str):
@@ -69,22 +79,32 @@ def setup_logging(log_level: str):
     log.info("Log level has been set to '%s'", log_level.upper())
 
 
-def create_tables(cur):
-    """
-    TODO
+def create_tables(conn) -> None:
+    """Runs a hardcoded SQL file to recreates project's database structure.
+
+    Args:
+        conn (psycopg2.connect): PostgreSQL database connection object
     """
     func_start_time = time()
     sql_file = os.path.join(os.path.dirname(__file__), 'lib/create_tables.sql')
     log.debug('Running create table SQL script, file: "%s"', sql_file)
     with open(sql_file) as sql:
-        cur.execute(sql.read())
+        with conn.cursor() as cur:
+            cur.execute(sql.read())
     log.info(
         'Creating table objects completed in %s seconds',
         round(time() - func_start_time, 3),
     )
 
 
-def bulk_load_df(data, table_name, conn):
+def bulk_load_df(data: pd.DataFrame, table_name: str, conn: pg.connect):
+    """Bulk inserts a pandas dataframe into PostgreSQL table
+
+    Args:
+        data (pandas.Dataframe): Data for insertion
+        table_name (str): Table name for logging purposes
+        conn (psycopg2.connect): PostgreSQL database connection
+    """
     buffer = StringIO()
     buffer.write(data.to_csv(index=None, header=None, na_rep=''))
     buffer.seek(0)
@@ -100,9 +120,12 @@ def bulk_load_df(data, table_name, conn):
         conn.commit()
 
 
-def load_stage_demo(conn, filepath):
-    """
-    TODO
+def load_stage_demo(conn: pg.connect, filepath: str) -> None:
+    """Loads data from specified JSON file into stage_demo table in PostgreSQL
+
+    Args:
+        conn (psycopg2.connect): PostgreSQL database connection
+        filepath (str): File path
     """
     func_start_time = time()
     log.info('Loading demo stage, file: "%s"', filepath)
@@ -142,8 +165,11 @@ def load_stage_demo(conn, filepath):
 
 
 def load_stage_temp(conn, filepath):
-    """
-    TODO
+    """Loads data from specified JSON file into stage_temp table in PostgreSQL
+
+    Args:
+        conn (psycopg2.connect): PostgreSQL database connection
+        filepath (str): File path
     """
     func_start_time = time()
     log.debug('Bulk loading temp stage, file: "%s"', filepath)
@@ -177,9 +203,13 @@ def load_stage_temp(conn, filepath):
     )
 
 
-def run_sql_etl(sql, conn, table_name):
-    """
-    TODO
+def run_sql_etl(sql: str, conn: pg.connect, table_name: str):
+    """Runs given SQL query on the provided PostgreSQL connection obj.
+
+    Args:
+        sql (str): SQL script to run
+        conn (psycopg2.connect): PostgreSQL database connection
+        table_name (str): Table name for logging purposes
     """
     func_start_time = time()
     log.debug('Running SQL ETL for "%s" table', table_name)
@@ -194,9 +224,7 @@ def run_sql_etl(sql, conn, table_name):
 
 
 def main():
-    """
-    TODO
-    """
+    """Main ETL function"""
     etl_start_time = time()
     default_config_file = f'{os.path.dirname(os.path.realpath(__file__))}' \
                           f'/config/config.yaml'
@@ -233,7 +261,7 @@ def main():
 
     # Initialise DB connection and cursor objects
     try:
-        conn, cur = init_db_conn(config['database'])
+        conn = init_db_conn(config['database'])
     except pg.OperationalError as exception:
         config['database']['password'] = '*****'
         log.error(
@@ -242,11 +270,24 @@ def main():
         )
         sys.exit(1)
 
+    # Sources
+    source_demo = config['data']['demographic']
+    source_temp = config['data']['temperature']
+
+    # Sanity checks, before ETL execution
+    log.debug('Checking, if source files exist')
+    for source_file in [source_temp, source_demo]:
+        if not os.path.isfile(source_file):
+            log.info('Configured source file "%s" does not exist', source_file)
+            sys.exit(1)
+        else:
+            log.debug('Source file "%s" exists', source_file)
+
     # ETL Jobs
-    create_tables(cur)
+    create_tables(conn)
     # Stage
-    load_stage_demo(conn, config['data']['demographic'])
-    load_stage_temp(conn, config['data']['temperature'])
+    load_stage_demo(conn, source_demo)
+    load_stage_temp(conn, source_temp)
     # Dimension
     run_sql_etl(LOAD_DIM_DATE, conn, 'dim_date')
     run_sql_etl(LOAD_DIM_CITY, conn, 'dim_city')
