@@ -9,7 +9,10 @@ import pandas as pd
 import psycopg2 as pg
 import yaml
 from dotenv import load_dotenv
-# from lib.sql_queries import SqlQueries
+from lib.sql_queries import LOAD_DIM_CITY
+from lib.sql_queries import LOAD_DIM_DATE
+from lib.sql_queries import LOAD_FACT_DEMO
+from lib.sql_queries import LOAD_FACT_TEMP
 
 
 def get_config(conf_file: str, section: str = None):
@@ -36,11 +39,12 @@ def init_db_conn(db_params: dict):
     TODO
     """
 
-    log.info('Connecting to database')
+    log.debug('Connecting to database')
     conn = pg.connect(**db_params)
     conn.set_session(autocommit=True)
     cur = conn.cursor()
     log.debug('Database params: "%s"', db_params)
+    log.info('Connected to database')
     return conn, cur
 
 
@@ -71,25 +75,25 @@ def create_tables(cur):
     """
     func_start_time = time()
     sql_file = os.path.join(os.path.dirname(__file__), 'lib/create_tables.sql')
-    log.info('Running create table SQL script, file: "%s"', sql_file)
+    log.debug('Running create table SQL script, file: "%s"', sql_file)
     with open(sql_file) as sql:
         cur.execute(sql.read())
     log.info(
-        'Job completed in: %s seconds',
+        'Creating table objects completed in %s seconds',
         round(time() - func_start_time, 3),
     )
 
 
-def bulk_load_df(df, table_name, conn):
+def bulk_load_df(data, table_name, conn):
     buffer = StringIO()
-    buffer.write(df.to_csv(index=None, header=None, na_rep=''))
+    buffer.write(data.to_csv(index=None, header=None, na_rep=''))
     buffer.seek(0)
 
     with conn.cursor() as cur:
         cur.copy_from(
             buffer,
             table_name,
-            columns=df.columns,
+            columns=data.columns,
             sep=',',
             null='',
         )
@@ -116,7 +120,6 @@ def load_stage_demo(conn, filepath):
     # Select only relevant data
     df_data = df_data[[
         'city',
-        'state',
         'record_timestamp',
         'number_of_veterans',
         'male_population',
@@ -127,10 +130,13 @@ def load_stage_demo(conn, filepath):
         'female_population',
     ]]
 
+    df_data['record_timestamp'] = '2015-01-01'
+
     bulk_load_df(df_data, 'public.stage_demo', conn)
 
     log.info(
-        'Job completed in: %s seconds',
+        'Bulk loading demo stage "%s" completed in: %s seconds',
+        filepath,
         round(time() - func_start_time, 3),
     )
 
@@ -140,7 +146,7 @@ def load_stage_temp(conn, filepath):
     TODO
     """
     func_start_time = time()
-    log.info('Bulk loading temp stage, file: "%s"', filepath)
+    log.debug('Bulk loading temp stage, file: "%s"', filepath)
     # Load file data into pandas dataframe
     df_data = pd.read_csv(filepath)
 
@@ -165,28 +171,33 @@ def load_stage_temp(conn, filepath):
     bulk_load_df(df_data, 'public.stage_temp', conn)
 
     log.info(
-        'Job completed in: %s seconds',
+        'Bulk loading temp stage "%s" completed in: %s seconds',
+        filepath,
         round(time() - func_start_time, 3),
     )
 
 
-def load_dim_date(sql, conn):
+def run_sql_etl(sql, conn, table_name):
     """
     TODO
     """
-
-
-def load_dim_city(sql, conn):
-    """
-    TODO
-    """
+    func_start_time = time()
+    log.debug('Running SQL ETL for "%s" table', table_name)
+    with conn.cursor() as cur:
+        cur.execute(sql)
+        conn.commit()
+    log.info(
+        'SQL ETL for table "%s" completed in: %s seconds',
+        table_name,
+        round(time() - func_start_time, 3),
+    )
 
 
 def main():
     """
     TODO
     """
-
+    etl_start_time = time()
     default_config_file = f'{os.path.dirname(os.path.realpath(__file__))}' \
                           f'/config/config.yaml'
 
@@ -233,11 +244,23 @@ def main():
 
     # ETL Jobs
     create_tables(cur)
+    # Stage
     load_stage_demo(conn, config['data']['demographic'])
     load_stage_temp(conn, config['data']['temperature'])
+    # Dimension
+    run_sql_etl(LOAD_DIM_DATE, conn, 'dim_date')
+    run_sql_etl(LOAD_DIM_CITY, conn, 'dim_city')
+    # Fact
+    run_sql_etl(LOAD_FACT_DEMO, conn, 'fact_demo')
+    run_sql_etl(LOAD_FACT_TEMP, conn, 'fact_temp')
 
-    log.info('Successfully disconnected from database')
+    log.info('Disconnected from database')
     conn.close()
+
+    log.info(
+        'ETL job completed successfully in %s seconds',
+        round(time() - etl_start_time, 3),
+    )
 
 
 if __name__ == '__main__':
