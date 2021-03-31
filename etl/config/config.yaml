@@ -1,0 +1,15 @@
+data:
+  demographic: 'data/us_demographic_2015.json'
+  temperature: 'data/global_land_temperatures_by_city.csv'
+
+database:
+  # Cluster host
+  host: localhost
+  # Cluster port
+  port: 5432
+  # Cluster db name
+  dbname: udacity
+  # Cluster db user
+  user: student
+  # (Optional) Application name
+  application_name: udacity-capstone-etl

@@ -129,7 +129,7 @@ dmypy.json
 .pyre/
 
 # Project
-original_data_sets
+data
 
 # Aiflow
 airflow/logs
