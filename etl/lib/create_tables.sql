@@ -2,13 +2,13 @@
 DROP TABLE IF EXISTS public.stage_demo;
 DROP TABLE IF EXISTS public.stage_temp;
 
--- drop dim tables
-DROP TABLE IF EXISTS public.dim_city;
-DROP TABLE IF EXISTS public.dim_date;
-
 -- drop fact tables
 DROP TABLE IF EXISTS public.fact_demo;
 DROP TABLE IF EXISTS public.fact_temp;
+
+-- drop dim tables
+DROP TABLE IF EXISTS public.dim_city;
+DROP TABLE IF EXISTS public.dim_date;
 
 -- create stage tables
 CREATE TABLE public.stage_demo (
@@ -55,12 +55,20 @@ CREATE TABLE public.fact_demo (
     average_household_size  BIGINT,
     median_age              BIGINT,
     total_population        BIGINT,
-    female_population       BIGINT
+    female_population       BIGINT,
+    CONSTRAINT fk_city FOREIGN KEY(city_id)
+        REFERENCES dim_city(city_id),
+    CONSTRAINT fk_date FOREIGN KEY("date")
+        REFERENCES dim_date("date")
 );
 
 CREATE TABLE public.fact_temp (
     temp_id     SERIAL PRIMARY KEY,
     city_id     BIGINT,
     date        DATE,
-    avg_temp    BIGINT
+    avg_temp    BIGINT,
+    CONSTRAINT fk_city FOREIGN KEY(city_id)
+        REFERENCES dim_city(city_id),
+    CONSTRAINT fk_date FOREIGN KEY("date")
+        REFERENCES dim_date("date")
 );
