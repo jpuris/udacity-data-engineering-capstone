@@ -75,6 +75,8 @@ Data exploration was done with Jupyter notebooks located in `data_exploration` d
 
    ```bash
    make prep-source
+   # Then activate the venv
+   source venv/bin/activate
    ```
 
    This will download the demographics data, but not the temperature data.
@@ -94,7 +96,7 @@ Data exploration was done with Jupyter notebooks located in `data_exploration` d
 6. Run ETL job
 
    ```bash
-   venv/bin/python3 etl/run.py
+   python etl/run.py
    ```
 
 ## Scalability and scheduling
