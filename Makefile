@@ -18,6 +18,7 @@ prep-venv:
 	python3 -m venv venv
 	venv/bin/python3 -m pip install --upgrade pip
 	venv/bin/python3 -m pip install -r requirements.txt
+	source venv/bin/activate
 
 prep-venv-dev: prep-venv
 	venv/bin/python3 -m pip install -r requirements-dev.txt

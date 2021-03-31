@@ -74,7 +74,7 @@ def main():
     logging.basicConfig(level=logging.INFO)
 
     # Check and/or create the target directory
-    output_directory = check_create_dir('../original_data_sets')
+    output_directory = check_create_dir('../data')
 
     download_file(
         'https://public.opendatasoft.com/explore/' +
