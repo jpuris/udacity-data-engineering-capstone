@@ -6,11 +6,11 @@ The objective of this project was to create an ETL pipeline for global land temp
 
 ## Pipeline
 
-![](images/pipeline.jpg)
+![images/pipeline.jpg](images/pipeline.jpg)
 
 ## Database structure
 
-![](images/db_schema.jpg)
+![images/db_schema.jpg](images/db_schema.jpg)
 
 ## Data dictionary
 
@@ -52,6 +52,7 @@ Data exploration was done with Jupyter notebooks located in `data_exploration` d
 - Docker
 - Docker compose
 - Python 3.8
+- make
 
 ### Recipe
 
@@ -103,16 +104,19 @@ Data exploration was done with Jupyter notebooks located in `data_exploration` d
 ```txt
 The data was increased by 100x.
 ```
+
 To comply with this scenario, one would need to extend this project to include Apache Spark technology. Spark scales near linearly and would be excellent fit.
 
 ```txt
 The pipelines would be run on a daily basis by 7 am every day.
 ```
+
 Apache Airflow would enable automation. The pipeline can be easily split up and turned into a DAG (Directed Acyclic Graph).
 
 ```txt
 The database needed to be accessed by 100+ people.
 ```
+
 The scaling has to happen on the access layer of the dataset or the database (depending on if the target audiance is looking for a data warehouse or data lake).
 
 ## The future
