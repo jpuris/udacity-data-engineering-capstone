@@ -20,6 +20,8 @@ Because the data is standalone (there are no other sources) neither it is recurr
 
 - ***PostgreSQL***; The World's Most Advanced Open Source Relational Database. Used as persistant data store and as project's data warehouse.
 
+Because the data set is relatively small and the data ingestion is done once, there has not been any need to employ tools such as Apache Airflow for job scheduling and / or Apache Spark for distributed computing.
+
 ## Database structure
 
 Model consists of two star shemas with one fact table each:
