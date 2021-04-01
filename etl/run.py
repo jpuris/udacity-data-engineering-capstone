@@ -13,6 +13,8 @@ from lib.sql_queries import LOAD_DIM_CITY
 from lib.sql_queries import LOAD_DIM_DATE
 from lib.sql_queries import LOAD_FACT_DEMO
 from lib.sql_queries import LOAD_FACT_TEMP
+from lib.sql_queries import TABLE_ROW_COUNT
+from psycopg2.extensions import AsIs
 
 
 def get_config(conf_file: str, section: str = None) -> dict:
@@ -223,6 +225,50 @@ def run_sql_etl(sql: str, conn: pg.connect, table_name: str):
     )
 
 
+def dq_check_fact_table_row_count(
+        stage_table: str,
+        fact_table: str,
+        conn: pg.connect,
+) -> bool:
+    """Compares row count between the stage and fact tables
+
+    Args:
+        stage_table (str): Target stage table name
+        fact_table (str): Target fact table name
+        conn (pg.connect): Psycopg2 connect obj
+
+    Returns:
+        bool: True, if checks have passed. False, if failed.
+    """
+    func_start_time = time()
+    log.debug(
+        'Running row consistency checks on "%s" and "%s" tables',
+        stage_table,
+        fact_table,
+    )
+
+    with conn.cursor() as cur:
+        cur.execute(TABLE_ROW_COUNT, {'table': AsIs(stage_table)})
+        stage_row_count = cur.fetchone()[0]
+        cur.execute(TABLE_ROW_COUNT, {'table': AsIs(fact_table)})
+        fact_row_count = cur.fetchone()[0]
+
+    if not stage_row_count == fact_row_count:
+        log.warning('Table consistency checks have failed')
+        log.warning('Table %s row count is %s', stage_table, stage_row_count)
+        log.warning('Table %s row count is %s', fact_table, fact_row_count)
+    else:
+        log.debug('Table %s row count is %s', stage_table, stage_row_count)
+        log.debug('Table %s row count is %s', fact_table, fact_row_count)
+
+    log.info(
+        'Consistency checks on "%s" and "%s" tables finished in %s seconds',
+        stage_table,
+        fact_table,
+        round(time() - func_start_time, 3),
+    )
+
+
 def main():
     """Main ETL function"""
     etl_start_time = time()
@@ -294,6 +340,9 @@ def main():
     # Fact
     run_sql_etl(LOAD_FACT_DEMO, conn, 'fact_demo')
     run_sql_etl(LOAD_FACT_TEMP, conn, 'fact_temp')
+    # Checks
+    dq_check_fact_table_row_count('stage_demo', 'fact_demo', conn)
+    dq_check_fact_table_row_count('stage_temp', 'fact_temp', conn)
 
     log.info('Disconnected from database')
     conn.close()

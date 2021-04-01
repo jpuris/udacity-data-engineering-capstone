@@ -75,3 +75,10 @@ FROM
     JOIN dim_city dc ON dc.city_name = st.city
     JOIN dim_date dt ON dt.date = st.dt;
 """
+
+TABLE_ROW_COUNT = """
+SELECT
+    count(*) as count
+FROM
+    %(table)s
+"""
