@@ -8,6 +8,8 @@ The objective of this project was to create an ETL pipeline for global land temp
 
 ![images/pipeline.jpg](images/pipeline.jpg)
 
+In addition, after the ETL is done, data quality checks will be performed on the stage and fact tables.
+
 ## Tools and technology
 
 The initial goals of this project are to restructure the source data in a way that would enable the data consumer to analyse it easily as well as describe the data with visualisation methods.
