@@ -8,7 +8,35 @@ The objective of this project was to create an ETL pipeline for global land temp
 
 ![images/pipeline.jpg](images/pipeline.jpg)
 
+## Tools and technology
+
+The initial goals of this project are to restructure the source data in a way that would enable the data consumer to analyse it easily as well as describe the data with visualisation methods.
+
+Because the data is standalone (there are no other sources) neither it is recurring, I have chosen to write the data pipeline in python with following libraries
+
+- ***Pandas***; a fast, powerful, flexible and easy to use open source data analysis and manipulation tool. In the project it is mainly used to load the data from source files and data cleaning.
+
+- ***Psycopg2***; the most popular PostgreSQL adapter for the Python programming language. Here we use it as means to interface with PostgreSQL
+
+- ***PostgreSQL***; The World's Most Advanced Open Source Relational Database. Used as persistant data store and as project's data warehouse.
+
 ## Database structure
+
+Model consists of two star shemas with one fact table each:
+
+- Demographics
+- Temperatures
+
+Both fact tables relate to same two dimension tables
+
+- City
+- Date
+
+The star schema was used for following reasons:
+
+- It is simple. Our data consumers will connect to the Data warehouse only.
+- City dimension was created for solo purpose of normalisation of fact tables
+- Date dimension was created to support analysis across different date attributes
 
 ![images/db_schema.jpg](images/db_schema.jpg)
 
